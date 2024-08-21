@@ -13,7 +13,7 @@ namespace EnergiOverblikApp.Services
     public class ElOverblikService
     {
         private readonly HttpClient client = new HttpClient();
-        private readonly string refreshToken = "ElOverblikApiKeyHere";
+        private readonly string refreshToken = "ElOverblikApiKeyHere"; // https://eloverblik.dk/customer/data-sharing
 
         public async Task<string> GetDataAccessTokenAsync()
         {

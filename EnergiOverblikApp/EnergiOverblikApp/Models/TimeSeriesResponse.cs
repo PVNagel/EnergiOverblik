@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using System.Collections.Generic;
 
 namespace EnergiOverblikApp.Models
 {
@@ -87,7 +86,7 @@ namespace EnergiOverblikApp.Models
         public MarketEvaluationPoint MarketEvaluationPoint { get; set; }
 
         [JsonProperty("Period")]
-        public List<Period> Period { get; set; } // Ensure this matches the JSON property
+        public List<Period> Period { get; set; }
     }
 
     public class MarketEvaluationPoint

@@ -1,19 +1,14 @@
 ﻿using EnergiOverblikApp.Models;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace EnergiOverblikApp.Services
 {
     public class ElOverblikService
     {
         private readonly HttpClient client = new HttpClient();
-        private readonly string refreshToken = "ElOverblikApiKeyHere"; // https://eloverblik.dk/customer/data-sharing
+        private readonly string refreshToken = "InsertApiKeyHere"; // https://eloverblik.dk/customer/data-sharing
 
         public async Task<string> GetDataAccessTokenAsync()
         {
@@ -43,9 +38,9 @@ namespace EnergiOverblikApp.Services
             return meteringPointResponse.Result;
         }
 
-        public async Task<TimeSeriesResponse> GetTimeSeriesAsync(string accessToken, string meteringPointId, string startDate, string endDate, string period)
+        public async Task<TimeSeriesResponse> GetTimeSeriesAsync(string accessToken, string meteringPointId, DateTime startDate, DateTime endDate, string period)
         {
-            string url = $"https://api.eloverblik.dk/customerapi/api/meterdata/gettimeseries/{startDate}/{endDate}/{period}";
+            string url = $"https://api.eloverblik.dk/customerapi/api/meterdata/gettimeseries/{startDate.ToString("yyyy-MM-dd")}/{endDate.ToString("yyyy-MM-dd")}/{period}";
             var request = new HttpRequestMessage(HttpMethod.Post, url);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));

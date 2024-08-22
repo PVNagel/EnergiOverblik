@@ -1,9 +1,5 @@
 ﻿using EnergiOverblikApp.Models;
-using EnergiOverblikApp.Models;
 using EnergiOverblikApp.Services;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Globalization;
 
 namespace EnergiOverblikApp
@@ -96,7 +92,8 @@ namespace EnergiOverblikApp
                 {
                     var point = meteringPoints[i];
                     Console.WriteLine($"{i + 1}. ID: {point.MeteringPointId}");
-                    Console.WriteLine($"   Address: {point.StreetName} {point.BuildingNumber}, {point.FloorId}.{point.RoomId}");
+                    Console.WriteLine($"   Address: {point.CityName}, {point.StreetName} {point.BuildingNumber}, {point.FloorId}.{point.RoomId}");
+                    Console.WriteLine($"   Consumer Start Date: {point.ConsumerStartDate:yyyy-MM-dd}");
                     Console.WriteLine($"   First Consumer Party Name: {point.FirstConsumerPartyName}");
                     Console.WriteLine("-------------------------------------------------------");
                 }
@@ -110,8 +107,8 @@ namespace EnergiOverblikApp
                     return;
                 }
 
-                string meteringPointId = meteringPoints[index].MeteringPointId;
-                await FetchAndDisplayTimeSeriesData(accessToken, meteringPointId);
+                MeteringPoint meteringPoint = meteringPoints[index];
+                await FetchAndDisplayTimeSeriesData(accessToken, meteringPoint);
             }
             else
             {
@@ -119,14 +116,63 @@ namespace EnergiOverblikApp
             }
         }
 
-
-        static async Task FetchAndDisplayTimeSeriesData(string accessToken, string meteringPointId)
+        static async Task FetchAndDisplayTimeSeriesData(string accessToken, MeteringPoint meteringPoint)
         {
-            Console.Write("Enter the start date (yyyy-MM-dd): ");
-            string startDate = Console.ReadLine();
+            DateTime meteringPointConsumerStartDate = meteringPoint.ConsumerStartDate;
+            Console.Clear();
+            Console.WriteLine($"Note: Consumer start date was {meteringPointConsumerStartDate:yyyy-MM-dd}, therefore the start date cannot be that or earlier.");
 
-            Console.Write("Enter the end date (yyyy-MM-dd): ");
-            string endDate = Console.ReadLine();
+            DateTime startDate = meteringPointConsumerStartDate;
+            bool isValidStartDate = false;
+
+            while (!isValidStartDate)
+            {
+                Console.Write("Enter the start date (yyyy-MM-dd): ");
+                string startDateInput = Console.ReadLine();
+
+                if (DateTime.TryParse(startDateInput, out startDate))
+                {
+                    if (startDate >= meteringPointConsumerStartDate)
+                    {
+                        isValidStartDate = true;
+                    }
+                    else
+                    {
+                        Console.Clear();
+                        Console.WriteLine($"The start date cannot be {meteringPointConsumerStartDate:yyyy-MM-dd} or earlier. Please try again.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Invalid start date format. Please enter the date in the format yyyy-MM-dd.");
+                }
+            }
+
+            DateTime endDate = DateTime.Today;
+            bool isValidEndDate = false;
+
+            while (!isValidEndDate)
+            {
+                Console.Write("Enter the end date (yyyy-MM-dd): ");
+                string endDateInput = Console.ReadLine();
+
+                if (DateTime.TryParse(endDateInput, out endDate))
+                {
+                    if (endDate <= DateTime.Today)
+                    {
+                        isValidEndDate = true;
+                    }
+                    else
+                    {
+                        Console.Clear();
+                        Console.WriteLine($"The end date cannot be later than today ({DateTime.Today:yyyy-MM-dd}). Please try again.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Invalid end date format. Please enter the date in the format yyyy-MM-dd.");
+                }
+            }
 
             Console.WriteLine("Select a period:");
             Console.WriteLine("1. Hour");
@@ -164,11 +210,11 @@ namespace EnergiOverblikApp
             }
             else
             {
-                Console.WriteLine("Invalid choice. Please select a number between 1 and 6.");
+                Console.WriteLine("Invalid choice. Please select a number between 1 and 4.");
                 Environment.Exit(1);
             }
 
-            TimeSeriesResponse timeSeriesResponse = await elOverblikService.GetTimeSeriesAsync(accessToken, meteringPointId, startDate, endDate, period);
+            TimeSeriesResponse timeSeriesResponse = await elOverblikService.GetTimeSeriesAsync(accessToken, meteringPoint.MeteringPointId, startDate, endDate, period);
             PrintTimeSeriesResponse(timeSeriesResponse);
         }
 
@@ -258,7 +304,7 @@ namespace EnergiOverblikApp
                         {
                             foreach (var period in timeSeries.Period)
                             {
-                                Console.WriteLine($"Resolution: {period.Resolution}");
+                                //Console.WriteLine($"Resolution: {period.Resolution}");
                                 Console.WriteLine($"Period: {period.TimeInterval?.Start} - {period.TimeInterval?.End}");
 
                                 if (period.Points != null)
@@ -276,6 +322,7 @@ namespace EnergiOverblikApp
                 }
             }
         }
+
         static async Task FetchAndDisplayStatisticsMenu()
         {
             if (meteringPoints.Count > 0)
@@ -286,7 +333,7 @@ namespace EnergiOverblikApp
                 {
                     var point = meteringPoints[i];
                     Console.WriteLine($"{i + 1}. ID: {point.MeteringPointId}");
-                    Console.WriteLine($"   Address: {point.StreetName} {point.BuildingNumber}, {point.FloorId}.{point.RoomId}");
+                    Console.WriteLine($"   Address: {point.CityName}, {point.StreetName} {point.BuildingNumber}, {point.FloorId}.{point.RoomId}");
                     Console.WriteLine($"   First Consumer Party Name: {point.FirstConsumerPartyName}");
                     Console.WriteLine($"   Consumer Start Date: {point.ConsumerStartDate:yyyy-MM-dd}");
                     Console.WriteLine("-------------------------------------------------------");
@@ -304,11 +351,10 @@ namespace EnergiOverblikApp
 
                 var selectedPoint = meteringPoints[index];
                 string meteringPointId = selectedPoint.MeteringPointId;
-                string startDate = selectedPoint.ConsumerStartDate.ToString("yyyy-MM-dd");
-                string endDate = DateTime.Now.ToString("yyyy-MM-dd");
-                string period = "Month";
+                DateTime startDate = selectedPoint.ConsumerStartDate;
+                DateTime endDate = DateTime.Now;
 
-                TimeSeriesResponse timeSeriesResponse = await elOverblikService.GetTimeSeriesAsync(accessToken, meteringPointId, startDate, endDate, period);
+                TimeSeriesResponse timeSeriesResponse = await elOverblikService.GetTimeSeriesAsync(accessToken, meteringPointId, startDate, endDate, "Month");
 
                 // Compute statistics
                 if (timeSeriesResponse?.Result != null && timeSeriesResponse.Result.Count > 0)

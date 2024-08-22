@@ -23,7 +23,6 @@ namespace EnergiOverblikApp.Services
             return tokenResponse.AccessToken;
         }
 
-
         public async Task<List<MeteringPoint>> GetMeteringPointsAsync(string accessToken)
         {
             var request = new HttpRequestMessage(HttpMethod.Get, "https://api.eloverblik.dk/customerapi/api/meteringpoints/meteringpoints");

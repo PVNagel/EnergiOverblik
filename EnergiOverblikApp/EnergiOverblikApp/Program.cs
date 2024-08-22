@@ -1,5 +1,6 @@
 ﻿using EnergiOverblikApp.Models;
 using EnergiOverblikApp.Services;
+using Microsoft.Extensions.Primitives;
 using System.Globalization;
 
 namespace EnergiOverblikApp
@@ -31,7 +32,7 @@ namespace EnergiOverblikApp
             Console.WriteLine("ENERGY OVERVIEW MENU");
             Console.WriteLine("1. Display Metering Points");
             Console.WriteLine("2. Display Meter Readings for a Metering Point");
-            Console.WriteLine("3. Get Metering Readings Statistics");
+            Console.WriteLine("3. Get Meter Reading Statistics");
             Console.WriteLine("4. Exit");
             Console.Write("Please enter your choice: ");
         }
@@ -215,7 +216,7 @@ namespace EnergiOverblikApp
             }
 
             TimeSeriesResponse timeSeriesResponse = await elOverblikService.GetTimeSeriesAsync(accessToken, meteringPoint.MeteringPointId, startDate, endDate, period);
-            PrintTimeSeriesResponse(timeSeriesResponse);
+            PrintTimeSeriesResponse(timeSeriesResponse, period);
         }
 
         static void PrintMeteringPoints(List<MeteringPoint> meteringPoints)
@@ -255,7 +256,7 @@ namespace EnergiOverblikApp
             }
         }
 
-        static void PrintTimeSeriesResponse(TimeSeriesResponse response)
+        static void PrintTimeSeriesResponse(TimeSeriesResponse response, string periodSelection)
         {
             Console.Clear();
 
@@ -304,15 +305,27 @@ namespace EnergiOverblikApp
                         {
                             foreach (var period in timeSeries.Period)
                             {
-                                //Console.WriteLine($"Resolution: {period.Resolution}");
-                                Console.WriteLine($"Period: {period.TimeInterval?.Start} - {period.TimeInterval?.End}");
+                                Console.WriteLine($"Measurement period: {period.TimeInterval?.Start} - {period.TimeInterval?.End}");
 
                                 if (period.Points != null)
                                 {
                                     foreach (var point in period.Points)
                                     {
+                                        DateTime startDate;
+                                        if (DateTime.TryParse(period.TimeInterval?.Start, out startDate))
+                                        {
+                                            if (periodSelection == "Month")
+                                            {
+                                                string month = startDate.ToString("MMMM yyyy", CultureInfo.GetCultureInfo("en-US"));
+                                                Console.WriteLine($"  Month: {month}");
+                                            }
+                                            else if (periodSelection == "Day")
+                                            {
+                                                string day = startDate.ToString("dddd", CultureInfo.GetCultureInfo("en-US"));
+                                                Console.WriteLine($"  Day: {day}");
+                                            }
+                                        }
                                         Console.WriteLine($"  Quantity: {point.Quantity} KWH");
-                                        Console.WriteLine($"  Quality: {point.Quality}");
                                         Console.WriteLine("-------------------------------------------------------");
                                     }
                                 }
